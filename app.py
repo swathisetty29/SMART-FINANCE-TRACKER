@@ -74,47 +74,220 @@ def parse_amount_input(raw_value: str) -> float:
 
 
 def apply_custom_styles() -> None:
-    """Add lightweight custom styling for a cleaner interface."""
+    """Add premium dark-mode styling with falling coins, gold accents, and ultra-thin dividers."""
     st.markdown(
         """
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
         <style>
+            /* ── Global Font ── */
+            html, body, [class*="css"] {
+                font-family: 'Inter', sans-serif !important;
+                font-size: 1.02rem !important;
+            }
+
+            /* ── Dark Animated Background ── */
+            .stApp {
+                background: linear-gradient(-45deg, #0b101e, #111827, #0f1a2e, #1a1035) !important;
+                background-size: 400% 400% !important;
+                animation: darkBG 18s ease infinite !important;
+            }
+            @keyframes darkBG {
+                0%   { background-position: 0% 50%; }
+                50%  { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+
+            /* ── Main Content Area ── */
             .block-container {
-                padding-top: 2.25rem;
-                padding-bottom: 2rem;
-                max-width: 1180px;
+                padding-top: 5rem;
+                padding-bottom: 2.5rem;
+                max-width: 1200px;
+                z-index: 10;
+                position: relative;
             }
+
+            /* ── Dark Glassmorphism Cards ── */
             .card {
-                background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-                border: 1px solid #e2e8f0;
-                border-radius: 18px;
-                padding: 1.1rem 1.15rem;
-                box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                border: 1px solid rgba(245, 166, 35, 0.18) !important;
+                border-radius: 18px !important;
+                padding: 1.5rem 1.6rem !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.06) !important;
                 margin-bottom: 1rem;
+                transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
             }
+            .card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(245, 166, 35, 0.45) !important;
+                box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 20px rgba(245, 166, 35, 0.08) !important;
+            }
+
+            /* ── Metric Labels & Values ── */
             .metric-label {
-                color: #64748b;
-                font-size: 0.92rem;
-                margin-bottom: 0.25rem;
+                color: #94a3b8;
+                font-size: 0.78rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+                margin-bottom: 0.4rem;
             }
             .metric-value {
-                font-size: 1.9rem;
-                font-weight: 700;
-                color: #0f172a;
-            }
-            .page-title {
                 font-size: 2.1rem;
-                font-weight: 700;
-                margin-bottom: 0.25rem;
+                font-weight: 800;
+                color: #f8fafc;
+                letter-spacing: -0.5px;
+            }
+
+            /* ── Page Titles ── */
+            .page-title {
+                font-size: 2.3rem;
+                font-weight: 900;
+                margin-bottom: 0.3rem;
+                background: linear-gradient(90deg, #F5A623 0%, #f9d06b 50%, #F5A623 100%);
+                background-size: 200% auto;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                animation: shimmer 3s linear infinite;
+            }
+            @keyframes shimmer {
+                0%   { background-position: 0% center; }
+                100% { background-position: 200% center; }
             }
             .page-subtitle {
-                color: #64748b;
-                margin-bottom: 1.2rem;
+                color: #94a3b8;
+                font-size: 1.1rem;
+                font-weight: 500;
+                margin-bottom: 1.6rem;
             }
             .section-gap {
                 margin-top: 0.6rem;
                 margin-bottom: 0.8rem;
             }
+
+            /* ── Sidebar ── */
+            [data-testid="stSidebar"] {
+                background: rgba(11, 16, 30, 0.92) !important;
+                border-right: 1px solid rgba(245, 166, 35, 0.15) !important;
+                backdrop-filter: blur(12px);
+            }
+            [data-testid="stSidebar"] .stSelectbox label,
+            [data-testid="stSidebar"] .stRadio label {
+                color: #94a3b8 !important;
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+            }
+
+            /* ── Buttons ── */
+            .stButton > button {
+                background: linear-gradient(135deg, #F5A623 0%, #e8940f 100%) !important;
+                color: #0b101e !important;
+                border: none !important;
+                border-radius: 12px !important;
+                font-weight: 700 !important;
+                font-size: 0.95rem !important;
+                padding: 0.6rem 1.6rem !important;
+                box-shadow: 0 4px 15px rgba(245, 166, 35, 0.3) !important;
+            }
+            .stButton > button:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 8px 25px rgba(245, 166, 35, 0.5) !important;
+            }
+
+            /* ── Text Inputs ── */
+            .stTextInput > div > div > input,
+            .stSelectbox > div > div {
+                background: rgba(255,255,255,0.05) !important;
+                border: 1px solid rgba(245, 166, 35, 0.2) !important;
+                border-radius: 10px !important;
+                color: #f1f5f9 !important;
+                transition: all 0.2s ease !important;
+            }
+            .stTextInput > div > div > input:focus {
+                border-color: #F5A623 !important;
+                background: rgba(255,255,255,0.08) !important;
+                box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15) !important;
+            }
+
+            /* Hide "Press Enter to submit form" tooltip (Aggressive) */
+            div[data-testid="stFormSubmitTooltip"],
+            [data-testid="stFormSubmitTooltip"],
+            [data-testid="InputInstructions"],
+            .stFormSubmitTooltip,
+            .stInputInstructions {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                position: absolute !important;
+                pointer-events: none !important;
+            }
+
+            /* ── ULTRA-THIN DIVIDER FIX ── */
+            hr, [data-testid="stMarkdownContainer"] hr {
+                all: unset !important;
+                display: block !important;
+                width: 100% !important;
+                height: 1px !important;
+                background-color: rgba(245, 166, 35, 0.2) !important;
+                border: none !important;
+                margin: 0.8rem 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            /* ── Falling Icons (Behind everything) ── */
+            .coin-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: -1 !important;
+            }
+            .coin {
+                position: absolute;
+                top: -10vh;
+                font-size: 2rem;
+                opacity: 0.35;
+                animation: fall linear infinite;
+            }
+            @keyframes fall {
+                0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+                10%  { opacity: 0.5; }
+                90%  { opacity: 0.5; }
+                100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+            }
+            .coin:nth-child(1)  { left: 5%;  animation-duration: 8s;   animation-delay: 0s; }
+            .coin:nth-child(2)  { left: 15%; animation-duration: 12s;  animation-delay: 2s; }
+            .coin:nth-child(3)  { left: 25%; animation-duration: 9s;   animation-delay: 4s; }
+            .coin:nth-child(4)  { left: 35%; animation-duration: 15s;  animation-delay: 1s; }
+            .coin:nth-child(5)  { left: 45%; animation-duration: 10s;  animation-delay: 5s; }
+            .coin:nth-child(6)  { left: 55%; animation-duration: 7s;   animation-delay: 3s; }
+            .coin:nth-child(7)  { left: 65%; animation-duration: 11s;  animation-delay: 7s; }
+            .coin:nth-child(8)  { left: 75%; animation-duration: 14s;  animation-delay: 2s; }
+            .coin:nth-child(9)  { left: 85%; animation-duration: 9.5s; animation-delay: 6s; }
+            .coin:nth-child(10) { left: 95%; animation-duration: 13s;  animation-delay: 4s; }
         </style>
+
+        <div class="coin-container">
+            <div class="coin">🪙</div>
+            <div class="coin">💵</div>
+            <div class="coin">🪙</div>
+            <div class="coin">💶</div>
+            <div class="coin">💰</div>
+            <div class="coin">💸</div>
+            <div class="coin">🪙</div>
+            <div class="coin">💳</div>
+            <div class="coin">🪙</div>
+            <div class="coin">💎</div>
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -228,8 +401,8 @@ def render_feedback_message(message_type: str, message: str) -> None:
         st.info(message)
 
 
-def render_metric_card(label: str, value: str, value_color: str = "#0f172a") -> None:
-    """Render a simple metric card using HTML styling."""
+def render_metric_card(label: str, value: str, value_color: str = "#f8fafc") -> None:
+    """Render a premium dark metric card using HTML styling."""
     st.markdown(
         f"""
         <div class="card">
@@ -248,11 +421,11 @@ def render_page_header(title: str, subtitle: str) -> None:
 
 
 def render_page_quote(quote: str) -> None:
-    """Render a short quote card for the current page."""
+    """Render a premium short motivational quote card."""
     st.markdown(
         f"""
-        <div class="card" style="padding: 0.9rem 1rem; border-left: 4px solid #2563eb;">
-            <div style="color: #475569; font-style: italic;">"{quote}"</div>
+        <div class="card" style="padding: 0.9rem 1.2rem; border-left: 4px solid #F5A623;">
+            <div style="color: #94a3b8; font-style: italic; font-size: 0.95rem; line-height: 1.6;">"{quote}"</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -519,8 +692,13 @@ def render_sidebar(username: str) -> tuple[str, int, int]:
     year_options = list(range(current_year - 4, current_year + 6))
 
     st.sidebar.title("💰 Smart Finance Tracker")
-    st.sidebar.caption(f"Logged in as: `{username}`")
-    st.sidebar.markdown("---")
+    st.sidebar.markdown(
+        f"""<div style="font-size: 1.05rem; font-weight: 600; color: #94a3b8; margin-top: -0.3rem;">
+        Logged in as: <span style="color: #F5A623; font-weight: 800; font-size: 1.1rem;">{username}</span>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+    st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
     selected_month = st.sidebar.selectbox(
         "Select Month",
         options=list(range(1, 13)),
@@ -537,12 +715,12 @@ def render_sidebar(username: str) -> tuple[str, int, int]:
     st.session_state.selected_month = selected_month
     st.session_state.selected_year = selected_year
 
-    st.sidebar.markdown("---")
+    st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
     page = st.sidebar.radio(
         "Menu",
         ["Dashboard", "Add Expense", "View Expenses", "Borrowed Money", "Insights"],
     )
-    st.sidebar.markdown("---")
+    st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
     if st.sidebar.button("Logout", use_container_width=True):
         if st.session_state.session_token:
             try:
@@ -654,6 +832,16 @@ def render_dashboard_page(username: str, selected_year: int, selected_month: int
     expenses_df = get_selected_month_expenses(username, selected_year, selected_month, selected_category)
     summary = calculate_summary(expenses_df, budget_amount)
 
+    # Fetch borrowing data
+    first_day, last_day = get_month_bounds(selected_year, selected_month)
+    borrowings_df = get_borrowings(
+        username=username,
+        start_date=first_day.isoformat(),
+        end_date=last_day.isoformat(),
+    )
+    total_borrowed = float(borrowings_df["amount"].sum()) if not borrowings_df.empty else 0.0
+    borrowing_count = len(borrowings_df)
+
     remaining_color = "#16a34a" if summary["remaining_budget"] >= 0 else "#dc2626"
     col1, col2, col3 = st.columns(3, gap="large")
     with col1:
@@ -662,6 +850,26 @@ def render_dashboard_page(username: str, selected_year: int, selected_month: int
         render_metric_card("Total Spent", format_currency(summary["total_spent"]))
     with col3:
         render_metric_card("Remaining Balance", format_currency(summary["remaining_budget"]), remaining_color)
+
+    # New row for Borrowing metrics
+    b_col1, b_col2, b_col3 = st.columns(3, gap="large")
+    with b_col1:
+        render_metric_card("Total Borrowed", format_currency(total_borrowed), "#b45309")
+    with b_col2:
+        render_metric_card("Borrowing Count", str(borrowing_count))
+    with b_col3:
+        # Placeholder for visual balance
+        st.write("")
+
+    # Borrow impact messages
+    if total_borrowed > 0:
+        st.warning(f"⚠️ You borrowed {format_currency(total_borrowed)} this month. Monitor your spending.")
+    
+    if (summary["total_spent"] + total_borrowed) > summary["budget"] and summary["budget"] > 0:
+        st.error("🚨 Your expenses + borrowings exceed your budget")
+    
+    if summary["total_spent"] > summary["budget"] and total_borrowed > 0 and summary["budget"] > 0:
+        st.info("💡 You started borrowing after exceeding your budget")
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     progress_value = min(summary["spent_percentage"] / 100, 1.0) if summary["budget"] > 0 else 0.0
@@ -700,10 +908,6 @@ def render_dashboard_insights(
     selected_month: int,
 ) -> None:
     """Render dashboard insights using friendly alert components."""
-    del username
-    del selected_year
-    del selected_month
-    st.subheader("💡 Insights")
     analysis = analyze_finances(expenses_df, budget_amount)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -715,6 +919,13 @@ def render_dashboard_insights(
 
     for warning in analysis["warnings"]:
         st.warning(warning)
+    
+    # Quick borrowing warning
+    first_day, last_day = get_month_bounds(selected_year, selected_month)
+    borrowings_df = get_borrowings(st.session_state.username, first_day.isoformat(), last_day.isoformat())
+    if not borrowings_df.empty:
+        st.warning("💳 Borrowing detected this month. Try reducing expenses.")
+
     for insight in analysis["insights"]:
         st.info(insight)
     st.success(analysis["prediction"])
@@ -739,9 +950,9 @@ def render_add_expense_page(username: str, selected_year: int, selected_month: i
         with col2:
             expense_date = st.date_input(
                 "Date",
-                value=first_day,
+                value=min(date.today(), last_day) if date.today() >= first_day else first_day,
                 min_value=first_day,
-                max_value=last_day,
+                max_value=min(date.today(), last_day),
             )
             note = st.text_input("Optional Note")
         submitted = st.form_submit_button("Add Expense", use_container_width=True)
@@ -799,9 +1010,9 @@ def render_borrowings_page(username: str, selected_year: int, selected_month: in
         with col2:
             borrowing_date = st.date_input(
                 "Borrowing Date",
-                value=first_day,
+                value=min(date.today(), last_day) if date.today() >= first_day else first_day,
                 min_value=first_day,
-                max_value=last_day,
+                max_value=min(date.today(), last_day),
             )
             note = st.text_input("Optional Note", placeholder="Any extra detail")
         submitted = st.form_submit_button("Save Borrowing", use_container_width=True)
@@ -874,9 +1085,50 @@ def render_insights_page(username: str, selected_year: int, selected_month: int)
 
     for warning in analysis["warnings"]:
         st.warning(warning)
+    
+    # Quick borrowing warning
+    first_day, last_day = get_month_bounds(selected_year, selected_month)
+    borrowings_df = get_borrowings(username, first_day.isoformat(), last_day.isoformat())
+    if not borrowings_df.empty:
+        st.warning("💳 Borrowing detected this month. Try reducing expenses.")
+
     for insight in analysis["insights"]:
         st.info(insight)
     st.success(analysis["prediction"])
+
+    # --- Borrowing Analysis Section ---
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+    st.subheader("💳 Borrowing Analysis")
+    
+    first_day, last_day = get_month_bounds(selected_year, selected_month)
+    borrowings_df = get_borrowings(username, first_day.isoformat(), last_day.isoformat())
+    
+    total_borrowed = float(borrowings_df["amount"].sum()) if not borrowings_df.empty else 0.0
+    borrowing_count = len(borrowings_df)
+
+    # Fetch previous month data for comparison
+    prev_month = selected_month - 1 if selected_month > 1 else 12
+    prev_year = selected_year if selected_month > 1 else selected_year - 1
+    p_first, p_last = get_month_bounds(prev_year, prev_month)
+    prev_borrowings_df = get_borrowings(username, p_first.isoformat(), p_last.isoformat())
+    prev_total_borrowed = float(prev_borrowings_df["amount"].sum()) if not prev_borrowings_df.empty else 0.0
+
+    sum_col1, sum_col2 = st.columns(2)
+    with sum_col1:
+        render_metric_card("Total Borrowed", format_currency(total_borrowed), "#b45309")
+    with sum_col2:
+        render_metric_card("Number of Borrowings", str(borrowing_count))
+
+    if total_borrowed > 0:
+        st.warning(f"⚠️ You borrowed {format_currency(total_borrowed)} this month")
+        st.info("💡 Try reducing high-spending categories to avoid borrowing")
+        
+        # Only show increase if previous month had borrowing
+        if prev_total_borrowed > 0 and total_borrowed > prev_total_borrowed:
+            st.error("📈 Your borrowing has increased compared to last month")
+        
+        if budget_amount and summary["total_spent"] > budget_amount:
+            st.warning("⚠️ You started borrowing after exceeding your budget")
 
 
 def main() -> None:
