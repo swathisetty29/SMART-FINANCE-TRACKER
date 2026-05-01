@@ -444,6 +444,47 @@ def get_month_label(selected_year: int, selected_month: int) -> str:
     return f"{month_name[selected_month]} {selected_year}"
 
 
+def get_month_access_state(selected_year: int, selected_month: int) -> str:
+    """Return whether the selected month is past, current, or future."""
+    today = date.today()
+    if (selected_year, selected_month) < (today.year, today.month):
+        return "past"
+    if (selected_year, selected_month) > (today.year, today.month):
+        return "future"
+    return "current"
+
+
+def render_month_access_notice(month_access_state: str) -> None:
+    """Show clear read/write restrictions for the selected month."""
+    if month_access_state == "future":
+        st.warning("You cannot add expenses for future months")
+    elif month_access_state == "past":
+        st.info("This month is read-only. You can only view expenses")
+
+
+def get_selected_year_expenses(
+    username: str,
+    selected_year: int,
+    category: str = "All",
+) -> pd.DataFrame:
+    """Fetch year-to-date expense data for the selected year."""
+    today = date.today()
+    start_date = date(selected_year, 1, 1)
+    if selected_year < today.year:
+        end_date = date(selected_year, 12, 31)
+    elif selected_year == today.year:
+        end_date = today
+    else:
+        return pd.DataFrame(columns=["date", "category", "amount", "note"])
+
+    return filter_expenses(
+        username=username,
+        start_date=start_date.isoformat(),
+        end_date=end_date.isoformat(),
+        category=category,
+    )
+
+
 def render_auth_screen() -> None:
     """Render the login and registration interface."""
     _, center, _ = st.columns([1, 1.35, 1])
@@ -686,7 +727,7 @@ def render_auth_screen() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_sidebar(username: str) -> tuple[str, int, int]:
+def render_sidebar(username: str) -> tuple[str, int, int, str]:
     """Render sidebar navigation and month/year selectors."""
     current_year = date.today().year
     year_options = list(range(current_year - 4, current_year + 6))
@@ -716,9 +757,17 @@ def render_sidebar(username: str) -> tuple[str, int, int]:
     st.session_state.selected_year = selected_year
 
     st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
+    view_mode = st.sidebar.radio("Data Scope", ["Monthly View", "Yearly View"], horizontal=False)
+
+    st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
+    menu_options = (
+        ["Dashboard", "Add Expense", "View Expenses", "Borrowed Money", "Insights"]
+        if view_mode == "Monthly View"
+        else ["Dashboard", "View Expenses", "Insights"]
+    )
     page = st.sidebar.radio(
         "Menu",
-        ["Dashboard", "Add Expense", "View Expenses", "Borrowed Money", "Insights"],
+        menu_options,
     )
     st.sidebar.markdown("<hr/>", unsafe_allow_html=True)
     if st.sidebar.button("Logout", use_container_width=True):
@@ -733,7 +782,7 @@ def render_sidebar(username: str) -> tuple[str, int, int]:
         if "session" in st.query_params:
             del st.query_params["session"]
         st.rerun()
-    return page, selected_month, selected_year
+    return page, selected_month, selected_year, view_mode
 
 
 def restore_login_from_query_params() -> None:
@@ -764,20 +813,27 @@ def render_budget_editor(username: str, selected_year: int, selected_month: int)
     render_page_quote(PAGE_QUOTES["dashboard"])
     month_label = get_month_label(selected_year, selected_month)
     budget_amount = get_budget(username, selected_year, selected_month)
+    month_access_state = get_month_access_state(selected_year, selected_month)
 
     st.subheader("💼 Monthly Budget")
     st.caption(f"Set a budget for {month_label}.")
+    render_month_access_notice(month_access_state)
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        with st.form("budget_form"):
+        with st.form("budget_form", clear_on_submit=False):
             budget_input = st.text_input(
                 f"Budget for {month_label}",
                 value=f"{float(budget_amount or 0.0):,.2f}" if budget_amount is not None else "",
                 placeholder="Enter budget like 5000 or 12,500.75",
+                disabled=month_access_state != "current",
             )
-            submitted = st.form_submit_button("Save Budget", use_container_width=True)
+            submitted = st.form_submit_button(
+                "Save Budget",
+                use_container_width=True,
+                disabled=month_access_state != "current",
+            )
 
-        if submitted:
+        if submitted and month_access_state == "current":
             try:
                 parsed_budget = parse_amount_input(budget_input)
                 set_budget(username, parsed_budget, selected_year, selected_month)
@@ -936,8 +992,10 @@ def render_add_expense_page(username: str, selected_year: int, selected_month: i
     render_page_header("🧾 Add Expense", "Capture expenses for the selected month in a clean, simple form.")
     render_page_quote(PAGE_QUOTES["add_expense"])
     first_day, last_day = get_month_bounds(selected_year, selected_month)
+    month_access_state = get_month_access_state(selected_year, selected_month)
 
     st.caption(f"Expenses added here will belong to {get_month_label(selected_year, selected_month)}.")
+    render_month_access_notice(month_access_state)
     st.markdown('<div class="card">', unsafe_allow_html=True)
     with st.form("expense_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
@@ -945,19 +1003,25 @@ def render_add_expense_page(username: str, selected_year: int, selected_month: i
             amount = st.text_input(
                 "Amount",
                 placeholder="Enter amount like 500, 2,500, or 2500.75",
+                disabled=month_access_state != "current",
             )
-            category = st.selectbox("Category", CATEGORIES)
+            category = st.selectbox("Category", CATEGORIES, disabled=month_access_state != "current")
         with col2:
             expense_date = st.date_input(
                 "Date",
                 value=min(date.today(), last_day) if date.today() >= first_day else first_day,
                 min_value=first_day,
                 max_value=min(date.today(), last_day),
+                disabled=month_access_state != "current",
             )
-            note = st.text_input("Optional Note")
-        submitted = st.form_submit_button("Add Expense", use_container_width=True)
+            note = st.text_input("Optional Note", disabled=month_access_state != "current")
+        submitted = st.form_submit_button(
+            "Add Expense",
+            use_container_width=True,
+            disabled=month_access_state != "current",
+        )
 
-    if submitted:
+    if submitted and month_access_state == "current":
         try:
             parsed_amount = parse_amount_input(amount)
             add_expense(username, parsed_amount, category, expense_date.isoformat(), note)
@@ -1131,6 +1195,102 @@ def render_insights_page(username: str, selected_year: int, selected_month: int)
             st.warning("⚠️ You started borrowing after exceeding your budget")
 
 
+def render_yearly_dashboard_page(username: str, selected_year: int) -> None:
+    """Render read-only yearly dashboard with insights-focused summaries."""
+    render_page_header("📅 Yearly Dashboard", "Year-to-date spending overview with read-only insights.")
+    st.caption(f"Showing aggregated data for {selected_year} (up to today where applicable).")
+    st.info("Yearly View is read-only. Adding or editing is not available here.")
+
+    selected_category = render_month_filter_card()
+    yearly_df = get_selected_year_expenses(username, selected_year, selected_category)
+    summary = calculate_summary(yearly_df, None)
+
+    col1, col2 = st.columns(2, gap="large")
+    with col1:
+        render_metric_card("Total Spending (Year)", format_currency(summary["total_spent"]))
+    with col2:
+        render_metric_card("Transactions", str(len(yearly_df)))
+
+    if yearly_df.empty:
+        st.info("No expenses available for this year-to-date range.")
+        return
+
+    trend_df = yearly_df.copy()
+    trend_df["date"] = pd.to_datetime(trend_df["date"])
+    trend_df["month"] = trend_df["date"].dt.strftime("%Y-%m")
+    monthly_trend = trend_df.groupby("month", as_index=False)["amount"].sum()
+
+    chart_col1, chart_col2 = st.columns(2, gap="large")
+    with chart_col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("🥧 Category Breakdown (Year)")
+        st.pyplot(create_pie_chart(category_breakdown(yearly_df)), use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    with chart_col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("📈 Monthly Trend")
+        st.pyplot(create_line_chart(monthly_trend), use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_yearly_view_expenses_page(username: str, selected_year: int) -> None:
+    """Render read-only expense table for year-to-date data."""
+    render_page_header("📋 Yearly Expenses", "Review year-to-date expenses in read-only mode.")
+    st.info("Yearly View is read-only. You can only analyze past and current data.")
+    selected_category = render_month_filter_card()
+    expenses_df = get_selected_year_expenses(username, selected_year, selected_category)
+
+    if expenses_df.empty:
+        st.info("No expenses found for the selected year range.")
+        return
+
+    display_df = expenses_df.copy()
+    display_df["date"] = pd.to_datetime(display_df["date"]).dt.strftime("%Y-%m-%d")
+    display_df["amount"] = display_df["amount"].map(format_currency)
+    st.dataframe(display_df[["date", "category", "amount", "note"]], use_container_width=True)
+
+
+def render_yearly_insights_page(username: str, selected_year: int) -> None:
+    """Render yearly insights with total, category mix, and monthly trend."""
+    render_page_header("🧠 Yearly Insights", "Read-only yearly analysis from January up to the allowed date.")
+    render_page_quote(PAGE_QUOTES["insights"])
+    st.info("Yearly View is read-only. This section is focused on insights only.")
+
+    yearly_df = get_selected_year_expenses(username, selected_year)
+    summary = calculate_summary(yearly_df, None)
+
+    metric_col1, metric_col2 = st.columns(2, gap="large")
+    with metric_col1:
+        render_metric_card("Total Spending in Year", format_currency(summary["total_spent"]))
+    with metric_col2:
+        top_category = "N/A"
+        if not yearly_df.empty:
+            top_category = category_breakdown(yearly_df).sort_values("amount", ascending=False).iloc[0]["category"]
+        render_metric_card("Top Category", str(top_category))
+
+    if yearly_df.empty:
+        st.info("No expenses available for yearly insights in this time range.")
+        return
+
+    category_totals = category_breakdown(yearly_df)
+    trend_df = yearly_df.copy()
+    trend_df["date"] = pd.to_datetime(trend_df["date"])
+    trend_df["month"] = trend_df["date"].dt.strftime("%Y-%m")
+    monthly_trend = trend_df.groupby("month", as_index=False)["amount"].sum()
+
+    chart_col1, chart_col2 = st.columns(2, gap="large")
+    with chart_col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("📊 Category-wise Breakdown")
+        st.pyplot(create_pie_chart(category_totals), use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    with chart_col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("📈 Monthly Spending Trend")
+        st.pyplot(create_line_chart(monthly_trend), use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 def main() -> None:
     """Application entry point."""
     init_db()
@@ -1143,18 +1303,26 @@ def main() -> None:
         return
 
     username = st.session_state.username
-    page, selected_month, selected_year = render_sidebar(username)
+    page, selected_month, selected_year, view_mode = render_sidebar(username)
 
-    if page == "Dashboard":
-        render_dashboard_page(username, selected_year, selected_month)
-    elif page == "Add Expense":
-        render_add_expense_page(username, selected_year, selected_month)
-    elif page == "View Expenses":
-        render_view_expenses_page(username, selected_year, selected_month)
-    elif page == "Borrowed Money":
-        render_borrowings_page(username, selected_year, selected_month)
+    if view_mode == "Yearly View":
+        if page == "Dashboard":
+            render_yearly_dashboard_page(username, selected_year)
+        elif page == "View Expenses":
+            render_yearly_view_expenses_page(username, selected_year)
+        else:
+            render_yearly_insights_page(username, selected_year)
     else:
-        render_insights_page(username, selected_year, selected_month)
+        if page == "Dashboard":
+            render_dashboard_page(username, selected_year, selected_month)
+        elif page == "Add Expense":
+            render_add_expense_page(username, selected_year, selected_month)
+        elif page == "View Expenses":
+            render_view_expenses_page(username, selected_year, selected_month)
+        elif page == "Borrowed Money":
+            render_borrowings_page(username, selected_year, selected_month)
+        else:
+            render_insights_page(username, selected_year, selected_month)
 
 
 if __name__ == "__main__":
